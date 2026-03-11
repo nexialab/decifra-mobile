@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
   import { useRouter } from 'expo-router';
   import { useAuth } from '@/lib/supabase/useAuth';
   import { supabase } from '@/lib/supabase/client';
+  import { COLORS } from '@/constants/colors';
 
   interface Treinadora {
     id: string;
@@ -46,23 +47,88 @@ import { useState, useEffect } from 'react';
       if (!user) return;
 
       try {
-        // Buscar dados da treinadora
+        // Primeiro tentar buscar treinadora existente
         const { data: treinadoraData, error: treinadoraError } = await supabase
           .from('treinadoras')
           .select('*')
           .eq('auth_user_id', user.id)
           .single();
 
-        if (treinadoraError) {
+        if (treinadoraData) {
+          // Treinadora encontrada
+          setTreinadora(treinadoraData);
+        } else if (treinadoraError?.code === 'PGRST116') {
+          // Não encontrada, verificar se já existe por email
+          const { data: existingByEmail } = await supabase
+            .from('treinadoras')
+            .select('*')
+            .eq('email', user.email)
+            .single();
+
+          if (existingByEmail) {
+            // Treinadora existe mas com auth_user_id diferente, atualizar
+            const { data: updatedTreinadora, error: updateError } = await supabase
+              .from('treinadoras')
+              .update({ auth_user_id: user.id })
+              .eq('id', existingByEmail.id)
+              .select()
+              .single();
+
+            if (updateError) {
+              console.error('Erro ao atualizar treinadora:', updateError);
+            } else {
+              setTreinadora(updatedTreinadora);
+            }
+          } else {
+            // Criar nova treinadora
+            console.log('Criando treinadora automaticamente...');
+            
+            const { data: novaTreinadora, error: criarError } = await supabase
+              .from('treinadoras')
+              .insert({
+                email: user.email || '',
+                nome: user.email?.split('@')[0] || 'Treinadora',
+                creditos: 5, // Créditos iniciais
+                auth_user_id: user.id,
+              })
+              .select()
+              .single();
+
+            if (criarError) {
+              // Se der erro de duplicado, tentar buscar novamente
+              if (criarError.code === '23505') {
+                const { data: retryData } = await supabase
+                  .from('treinadoras')
+                  .select('*')
+                  .eq('email', user.email)
+                  .single();
+                
+                if (retryData) {
+                  setTreinadora(retryData);
+                }
+              } else {
+                console.error('Erro ao criar treinadora:', criarError);
+                Alert.alert('Erro', 'Não foi possível criar seu perfil. Tente novamente.');
+              }
+              setLoading(false);
+              return;
+            }
+
+            if (novaTreinadora) {
+              setTreinadora(novaTreinadora);
+              Alert.alert(
+                'Bem-vinda!',
+                'Seu perfil foi criado automaticamente. Você recebeu 5 créditos para começar!'
+              );
+            }
+          }
+        } else {
           console.error('Erro ao buscar treinadora:', treinadoraError);
           Alert.alert('Erro', 'Não foi possível carregar seus dados');
           setLoading(false);
           return;
         }
 
-        setTreinadora(treinadoraData);
-
-        // Buscar clientes da treinadora
         const { data: clientesData, error: clientesError } = await supabase
           .from('clientes')
           .select('*')
@@ -91,7 +157,6 @@ import { useState, useEffect } from 'react';
     const gerarCodigo = async () => {
       if (!treinadora) return;
 
-      // Verificar créditos
       if (treinadora.creditos <= 0) {
         Alert.alert(
           'Sem créditos',
@@ -104,7 +169,6 @@ import { useState, useEffect } from 'react';
       setGerandoCodigo(true);
 
       try {
-        // Gerar código único
         const { data: codigoData, error: codigoError } = await supabase
           .rpc('gerar_codigo_unico');
 
@@ -117,11 +181,9 @@ import { useState, useEffect } from 'react';
 
         const codigoGerado = codigoData as string;
         
-        // Data de validade: 30 dias a partir de agora
         const validoAte = new Date();
         validoAte.setDate(validoAte.getDate() + 30);
 
-        // Inserir código no banco
         const { error: insertError } = await supabase
           .from('codigos')
           .insert({
@@ -137,7 +199,6 @@ import { useState, useEffect } from 'react';
           return;
         }
 
-        // Descontar crédito
         const { error: updateError } = await supabase
           .from('treinadoras')
           .update({ creditos: treinadora.creditos - 1 })
@@ -147,7 +208,6 @@ import { useState, useEffect } from 'react';
           console.error('Erro ao atualizar créditos:', updateError);
         }
 
-        // Atualizar estado local
         setTreinadora({ ...treinadora, creditos: treinadora.creditos - 1 });
 
         Alert.alert(
@@ -155,7 +215,6 @@ import { useState, useEffect } from 'react';
           `Código: ${codigoGerado}\n\nVálido até: ${validoAte.toLocaleDateString('pt-BR')}\n\nCompartilhe este código com seu cliente.`,
           [
             { text: 'Copiar Código', onPress: () => {
-              // TODO: Implementar cópia para clipboard
               console.log('Código copiado:', codigoGerado);
             }},
             { text: 'OK' }
@@ -190,7 +249,7 @@ import { useState, useEffect } from 'react';
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#667eea" />
+          <ActivityIndicator size="large" color={COLORS.accent} />
         </View>
       );
     }
@@ -207,9 +266,9 @@ import { useState, useEffect } from 'react';
     }
 
     const statusColors = {
-      ativo: '#FFA500',
-      em_andamento: '#007AFF',
-      completo: '#34C759',
+      ativo: COLORS.warning,
+      em_andamento: COLORS.accentGlow,
+      completo: COLORS.success,
     };
 
     const statusLabels = {
@@ -233,10 +292,9 @@ import { useState, useEffect } from 'react';
         <ScrollView
           style={styles.content}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.accent} />
           }
         >
-          {/* Card de Créditos */}
           <View style={styles.creditCard}>
             <View style={styles.creditInfo}>
               <Text style={styles.creditLabel}>Créditos Disponíveis</Text>
@@ -248,14 +306,13 @@ import { useState, useEffect } from 'react';
               disabled={gerandoCodigo}
             >
               {gerandoCodigo ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={COLORS.accent} />
               ) : (
                 <Text style={styles.generateButtonText}>Gerar Código</Text>
               )}
             </TouchableOpacity>
           </View>
 
-          {/* Lista de Clientes */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Meus Clientes ({clientes.length})</Text>
             
@@ -271,8 +328,7 @@ import { useState, useEffect } from 'react';
                   key={cliente.id}
                   style={styles.clientCard}
                   onPress={() => {
-                    // TODO: Navegar para detalhes do cliente
-                    router.push(`/treinadora/cliente/${cliente.id}`);
+                    router.push(`/treinadora/cliente/${cliente.id}` as any);
                   }}
                 >
                   <View style={styles.clientInfo}>
@@ -303,22 +359,24 @@ import { useState, useEffect } from 'react';
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#F5F5F7',
+      backgroundColor: COLORS.dark1,
     },
     loadingContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: COLORS.dark1,
     },
     errorContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       padding: 24,
+      backgroundColor: COLORS.dark1,
     },
     errorText: {
       fontSize: 18,
-      color: '#FF3B30',
+      color: COLORS.error,
       marginBottom: 16,
     },
     header: {
@@ -327,24 +385,24 @@ import { useState, useEffect } from 'react';
       alignItems: 'center',
       paddingHorizontal: 24,
       paddingVertical: 16,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: COLORS.dark2,
       borderBottomWidth: 1,
-      borderBottomColor: '#E5E5EA',
+      borderBottomColor: COLORS.cardBorder,
     },
     headerTitle: {
       fontSize: 24,
-      fontWeight: 'bold',
-      color: '#000000',
+      fontWeight: 'bold' as const,
+      color: COLORS.cream,
     },
     headerSubtitle: {
       fontSize: 14,
-      color: '#8E8E93',
+      color: COLORS.textSecondary,
       marginTop: 4,
     },
     logoutText: {
       fontSize: 16,
-      color: '#FF3B30',
-      fontWeight: '600',
+      color: COLORS.error,
+      fontWeight: '600' as const,
     },
     content: {
       flex: 1,
@@ -352,11 +410,11 @@ import { useState, useEffect } from 'react';
     creditCard: {
       margin: 24,
       padding: 24,
-      backgroundColor: '#667eea',
+      backgroundColor: COLORS.accent,
       borderRadius: 16,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
+      shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 5,
     },
@@ -365,25 +423,25 @@ import { useState, useEffect } from 'react';
     },
     creditLabel: {
       fontSize: 16,
-      color: '#FFFFFF',
+      color: COLORS.creamLight,
       opacity: 0.9,
     },
     creditValue: {
       fontSize: 48,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
+      fontWeight: 'bold' as const,
+      color: COLORS.white,
       marginTop: 8,
     },
     generateButton: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: COLORS.dark1,
       paddingVertical: 14,
       borderRadius: 12,
       alignItems: 'center',
     },
     generateButtonText: {
       fontSize: 16,
-      fontWeight: '600',
-      color: '#667eea',
+      fontWeight: '600' as const,
+      color: COLORS.cream,
     },
     buttonDisabled: {
       opacity: 0.7,
@@ -394,19 +452,21 @@ import { useState, useEffect } from 'react';
     },
     sectionTitle: {
       fontSize: 20,
-      fontWeight: 'bold',
-      color: '#000000',
+      fontWeight: 'bold' as const,
+      color: COLORS.cream,
       marginBottom: 16,
     },
     emptyState: {
       padding: 32,
       alignItems: 'center',
-      backgroundColor: '#FFFFFF',
+      backgroundColor: COLORS.cardBg,
       borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
     },
     emptyStateText: {
       fontSize: 16,
-      color: '#8E8E93',
+      color: COLORS.textSecondary,
       textAlign: 'center',
       lineHeight: 24,
     },
@@ -415,26 +475,23 @@ import { useState, useEffect } from 'react';
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: 16,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: COLORS.cardBg,
       borderRadius: 12,
       marginBottom: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
     },
     clientInfo: {
       flex: 1,
     },
     clientName: {
       fontSize: 18,
-      fontWeight: '600',
-      color: '#000000',
+      fontWeight: '600' as const,
+      color: COLORS.cream,
     },
     clientDate: {
       fontSize: 14,
-      color: '#8E8E93',
+      color: COLORS.textMuted,
       marginTop: 4,
     },
     statusBadge: {
@@ -444,19 +501,18 @@ import { useState, useEffect } from 'react';
     },
     statusText: {
       fontSize: 12,
-      fontWeight: '600',
-      color: '#FFFFFF',
+      fontWeight: '600' as const,
+      color: COLORS.white,
     },
     button: {
-      backgroundColor: '#667eea',
+      backgroundColor: COLORS.accent,
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 8,
     },
     buttonText: {
-      color: '#FFFFFF',
+      color: COLORS.cream,
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: '600' as const,
     },
   });
-  

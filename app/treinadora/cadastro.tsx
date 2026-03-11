@@ -16,6 +16,7 @@ import { useState } from 'react';
   import { LinearGradient } from 'expo-linear-gradient';
   import { useAuth } from '@/lib/supabase/useAuth';
   import { supabase } from '@/lib/supabase/client';
+  import { COLORS } from '@/constants/colors';
 
   export default function TreinadoraCadastroScreen() {
     const router = useRouter();
@@ -28,7 +29,6 @@ import { useState } from 'react';
     const [loading, setLoading] = useState(false);
 
     const handleCadastro = async () => {
-      // Validações
       if (!nome || !email || !password || !confirmPassword) {
         Alert.alert('Erro', 'Por favor, preencha todos os campos');
         return;
@@ -47,7 +47,6 @@ import { useState } from 'react';
       setLoading(true);
       
       try {
-        // Criar conta no Supabase Auth
         const { data, error } = await signUp(email, password, nome);
         
         if (error) {
@@ -56,7 +55,6 @@ import { useState } from 'react';
           return;
         }
 
-        // Criar registro na tabela treinadoras
         if (data.user) {
           const { error: dbError } = await supabase
             .from('treinadoras')
@@ -64,7 +62,7 @@ import { useState } from 'react';
               auth_user_id: data.user.id,
               email: email,
               nome: nome,
-              creditos: 5, // 5 créditos iniciais de boas-vindas
+              creditos: 5,
             });
 
           if (dbError) {
@@ -89,7 +87,7 @@ import { useState } from 'react';
     };
 
     return (
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
+      <LinearGradient colors={[...COLORS.gradient]} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -109,7 +107,7 @@ import { useState } from 'react';
                   <TextInput
                     style={styles.input}
                     placeholder="Nome completo"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={COLORS.textMuted}
                     value={nome}
                     onChangeText={setNome}
                     autoCapitalize="words"
@@ -118,7 +116,7 @@ import { useState } from 'react';
                   <TextInput
                     style={styles.input}
                     placeholder="Email"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={COLORS.textMuted}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -129,7 +127,7 @@ import { useState } from 'react';
                   <TextInput
                     style={styles.input}
                     placeholder="Senha (mínimo 6 caracteres)"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={COLORS.textMuted}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
@@ -139,22 +137,29 @@ import { useState } from 'react';
                   <TextInput
                     style={styles.input}
                     placeholder="Confirmar senha"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={COLORS.textMuted}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry
                   />
 
                   <TouchableOpacity
-                    style={[styles.button, loading && styles.buttonDisabled]}
+                    style={[styles.buttonWrapper, loading && styles.buttonDisabled]}
                     onPress={handleCadastro}
                     disabled={loading}
                   >
-                    {loading ? (
-                      <ActivityIndicator color="#667eea" />
-                    ) : (
-                      <Text style={styles.buttonText}>Criar Conta</Text>
-                    )}
+                    <LinearGradient
+                      colors={[...COLORS.gradientButton]}
+                      style={styles.button}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color={COLORS.creamLight} />
+                      ) : (
+                        <Text style={styles.buttonText}>Criar Conta</Text>
+                      )}
+                    </LinearGradient>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -195,14 +200,14 @@ import { useState } from 'react';
     },
     title: {
       fontSize: 32,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
+      fontWeight: 'bold' as const,
+      color: COLORS.creamLight,
       marginBottom: 8,
       textAlign: 'center',
     },
     subtitle: {
       fontSize: 16,
-      color: '#FFFFFF',
+      color: COLORS.cream,
       opacity: 0.9,
       marginBottom: 40,
       textAlign: 'center',
@@ -211,48 +216,49 @@ import { useState } from 'react';
       width: '100%',
     },
     input: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: COLORS.inputBg,
       paddingVertical: 16,
       paddingHorizontal: 20,
       borderRadius: 12,
       fontSize: 16,
+      color: COLORS.cream,
       marginBottom: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      borderWidth: 1,
+      borderColor: COLORS.inputBorder,
+    },
+    buttonWrapper: {
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginTop: 8,
+      shadowColor: COLORS.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 5,
     },
     button: {
-      backgroundColor: '#FFFFFF',
       paddingVertical: 18,
       borderRadius: 12,
       alignItems: 'center',
-      marginTop: 8,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 5,
     },
     buttonDisabled: {
       opacity: 0.7,
     },
     buttonText: {
       fontSize: 18,
-      fontWeight: '600',
-      color: '#667eea',
+      fontWeight: '600' as const,
+      color: COLORS.creamLight,
     },
     linkContainer: {
       marginTop: 24,
       alignItems: 'center',
     },
     linkText: {
-      color: '#FFFFFF',
+      color: COLORS.cream,
       fontSize: 16,
     },
     linkBold: {
-      fontWeight: 'bold',
+      fontWeight: 'bold' as const,
+      color: COLORS.accentGlow,
     },
   });
-  

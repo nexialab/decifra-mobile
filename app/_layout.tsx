@@ -9,8 +9,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
+import { View, StyleSheet } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 
@@ -29,6 +28,7 @@ function RootLayoutNav() {
       <Stack.Screen name="cliente/teste" />
       <Stack.Screen name="cliente/processando" />
       <Stack.Screen name="cliente/resultado" />
+      <Stack.Screen name="cliente/protocolos" />
     </Stack>
   );
 }
@@ -52,12 +52,16 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <GestureHandlerRootView>
-          <KeyboardProvider>
-            <RootLayoutNav />
-          </KeyboardProvider>
-        </GestureHandlerRootView>
+        <View style={styles.container}>
+          <RootLayoutNav />
+        </View>
       </QueryClientProvider>
     </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

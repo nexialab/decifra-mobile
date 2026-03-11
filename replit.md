@@ -4,6 +4,13 @@
 Mobile app (React Native/Expo) for Big Five personality assessment (IPIP-NEO-120).
 Two user types: Treinadoras (coaches with auth) and Clientes (test takers with access codes).
 
+## Visual Identity
+- Brand colors defined in `constants/colors.ts`
+- Dark burgundy/wine gradient background (#1A0A0E → #2D1117 → #4A1E1E)
+- Orange-red accent (#E84B2B, #FF6B35)
+- Cream/off-white text (#F5E6D3, #FFF5EB)
+- App icon: DECIFRA eye logo (attached_assets/ICONE-APPDECIFRA.png)
+
 ## Architecture
 - **Frontend**: React Native + Expo SDK 54 + Expo Router (file-based routing)
 - **Backend**: Express.js server on port 5000 (landing page + API proxy)
@@ -11,6 +18,7 @@ Two user types: Treinadoras (coaches with auth) and Clientes (test takers with a
 - **State**: React Query + AsyncStorage for local persistence
 
 ## Key Files
+- `constants/colors.ts` - Brand color palette (COLORS constant)
 - `lib/supabase/client.ts` - Supabase client configuration
 - `lib/supabase/useAuth.ts` - Authentication hook
 - `constants/ipip.ts` - Big Five factors, facets, mappings
@@ -25,7 +33,6 @@ Two user types: Treinadoras (coaches with auth) and Clientes (test takers with a
 app/
   index.tsx                    - Home (choose: Coach or Client)
   _layout.tsx                  - Root layout with providers
-  (tabs)/                      - Default tab layout (template)
   treinadora/
     login.tsx                  - Coach login
     cadastro.tsx               - Coach registration
@@ -44,8 +51,8 @@ app/
 Schema in `supabase-schema.sql` - must be executed in Supabase SQL Editor
 
 ## Environment Variables
-- `EXPO_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `EXPO_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon/public key
+- `EXPO_PUBLIC_SUPABASE_URL` - Supabase project URL (set)
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon/public key (set)
 
 ## Workflows
 - `Start Backend` - Express server (port 5000)

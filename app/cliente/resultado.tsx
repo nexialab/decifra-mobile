@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
   import { Mandala } from '@/components/ui/Mandala';
   import { FATORES } from '@/constants/ipip';
   import type { FatorKey } from '@/constants/ipip';
+  import { COLORS } from '@/constants/colors';
 
   interface Resultado {
     id: string;
@@ -49,7 +50,6 @@ import { useEffect, useState } from 'react';
 
     const carregarResultado = async () => {
       try {
-        // Buscar resultado
         const { data: resultadoData, error: resultadoError } = await supabase
           .from('resultados')
           .select('*')
@@ -64,7 +64,6 @@ import { useEffect, useState } from 'react';
 
         setResultado(resultadoData as Resultado);
 
-        // Buscar protocolos recomendados (máximo 4 para cliente)
         const { data: protocolosData, error: protocolosError } = await supabase
           .from('protocolos_recomendados')
           .select(`
@@ -101,7 +100,7 @@ import { useEffect, useState } from 'react';
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#667eea" />
+          <ActivityIndicator size="large" color={COLORS.accent} />
         </View>
       );
     }
@@ -117,10 +116,9 @@ import { useEffect, useState } from 'react';
     const scoresFatores = resultado.scores_fatores;
 
     return (
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
+      <LinearGradient colors={[...COLORS.gradient]} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <ScrollView style={styles.content}>
-            {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Seu Resultado</Text>
               <Text style={styles.subtitle}>
@@ -128,7 +126,6 @@ import { useEffect, useState } from 'react';
               </Text>
             </View>
 
-            {/* Mandala */}
             <View style={styles.mandalaContainer}>
               <Mandala
                 scores={scoresFatores.map(sf => ({
@@ -139,7 +136,6 @@ import { useEffect, useState } from 'react';
               />
             </View>
 
-            {/* Scores dos Fatores */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Seus 5 Fatores</Text>
               
@@ -169,7 +165,6 @@ import { useEffect, useState } from 'react';
               })}
             </View>
 
-            {/* Protocolos Recomendados */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Protocolos Recomendados</Text>
               <Text style={styles.sectionSubtitle}>
@@ -180,7 +175,9 @@ import { useEffect, useState } from 'react';
                 protocolos.map((protocolo, index) => (
                   <View key={protocolo.id} style={styles.protocoloCard}>
                     <View style={styles.protocoloHeader}>
-                      <Text style={styles.protocoloNumero}>{index + 1}</Text>
+                      <View style={styles.protocoloNumeroContainer}>
+                        <Text style={styles.protocoloNumero}>{index + 1}</Text>
+                      </View>
                       <View style={styles.protocoloInfo}>
                         <Text style={styles.protocoloTitulo}>
                           {protocolo.titulo}
@@ -201,10 +198,9 @@ import { useEffect, useState } from 'react';
               )}
             </View>
 
-            {/* Informação */}
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>
-                💡 Sua treinadora tem acesso a um relatório completo com análise detalhada de todas as 30 facetas e 6 protocolos personalizados.
+                Sua treinadora tem acesso a um relatório completo com análise detalhada de todas as 30 facetas e 6 protocolos personalizados.
               </Text>
             </View>
 
@@ -226,16 +222,18 @@ import { useEffect, useState } from 'react';
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: COLORS.dark1,
     },
     errorContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       padding: 24,
+      backgroundColor: COLORS.dark1,
     },
     errorText: {
       fontSize: 18,
-      color: '#FF3B30',
+      color: COLORS.error,
     },
     content: {
       flex: 1,
@@ -248,21 +246,23 @@ import { useEffect, useState } from 'react';
     title: {
       fontSize: 32,
       fontWeight: 'bold',
-      color: '#FFFFFF',
+      color: COLORS.creamLight,
       marginBottom: 8,
     },
     subtitle: {
       fontSize: 16,
-      color: '#FFFFFF',
+      color: COLORS.cream,
       opacity: 0.9,
     },
     mandalaContainer: {
       alignItems: 'center',
       paddingVertical: 24,
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      backgroundColor: COLORS.cardBg,
       marginHorizontal: 24,
       borderRadius: 20,
       marginBottom: 24,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
     },
     section: {
       paddingHorizontal: 24,
@@ -271,20 +271,22 @@ import { useEffect, useState } from 'react';
     sectionTitle: {
       fontSize: 24,
       fontWeight: 'bold',
-      color: '#FFFFFF',
+      color: COLORS.creamLight,
       marginBottom: 8,
     },
     sectionSubtitle: {
       fontSize: 16,
-      color: '#FFFFFF',
+      color: COLORS.cream,
       opacity: 0.9,
       marginBottom: 16,
     },
     fatorCard: {
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      backgroundColor: COLORS.cardBg,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
     },
     fatorHeader: {
       flexDirection: 'row',
@@ -295,50 +297,54 @@ import { useEffect, useState } from 'react';
     fatorNome: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: '#333333',
+      color: COLORS.cream,
     },
     fatorClassificacao: {
       fontSize: 14,
       fontWeight: '600',
-      color: '#667eea',
+      color: COLORS.accent,
     },
     percentilBar: {
       height: 8,
-      backgroundColor: '#E0E0E0',
+      backgroundColor: 'rgba(245, 230, 211, 0.15)',
       borderRadius: 4,
       overflow: 'hidden',
       marginBottom: 8,
     },
     percentilFill: {
       height: '100%',
-      backgroundColor: '#667eea',
+      backgroundColor: COLORS.accent,
       borderRadius: 4,
     },
     percentilText: {
       fontSize: 14,
-      color: '#666666',
+      color: COLORS.textSecondary,
     },
     protocoloCard: {
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      backgroundColor: COLORS.cardBg,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
     },
     protocoloHeader: {
       flexDirection: 'row',
       alignItems: 'flex-start',
     },
-    protocoloNumero: {
+    protocoloNumeroContainer: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: '#667eea',
-      color: '#FFFFFF',
+      backgroundColor: COLORS.accent,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    protocoloNumero: {
+      color: COLORS.creamLight,
       fontSize: 16,
       fontWeight: 'bold',
-      textAlign: 'center',
-      lineHeight: 32,
-      marginRight: 12,
     },
     protocoloInfo: {
       flex: 1,
@@ -346,37 +352,40 @@ import { useEffect, useState } from 'react';
     protocoloTitulo: {
       fontSize: 16,
       fontWeight: 'bold',
-      color: '#333333',
+      color: COLORS.cream,
       marginBottom: 6,
     },
     protocoloDescricao: {
       fontSize: 14,
-      color: '#666666',
+      color: COLORS.textSecondary,
       lineHeight: 20,
     },
     emptyState: {
       padding: 24,
       alignItems: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      backgroundColor: COLORS.cardBg,
       borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
     },
     emptyStateText: {
       fontSize: 16,
-      color: '#666666',
+      color: COLORS.textSecondary,
     },
     infoBox: {
       marginHorizontal: 24,
       padding: 16,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: COLORS.cardBg,
       borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
     },
     infoText: {
       fontSize: 14,
-      color: '#FFFFFF',
+      color: COLORS.cream,
       lineHeight: 20,
     },
     espacoFinal: {
       height: 40,
     },
   });
-  

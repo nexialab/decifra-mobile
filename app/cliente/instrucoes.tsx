@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS } from '@/constants/colors';
 
 export default function ClienteInstrucoesScreen() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function ClienteInstrucoesScreen() {
   };
 
   return (
-    <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
+    <LinearGradient colors={[...COLORS.gradient]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.content}>
@@ -63,7 +64,14 @@ export default function ClienteInstrucoesScreen() {
             </View>
 
             <TouchableOpacity style={styles.button} onPress={handleIniciar}>
-              <Text style={styles.buttonText}>Comecar Teste</Text>
+              <LinearGradient
+                colors={[...COLORS.gradientButton]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.buttonText}>Comecar Teste</Text>
+              </LinearGradient>
             </TouchableOpacity>
 
             <Text style={styles.footer}>
@@ -94,53 +102,53 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold' as const,
-    color: '#FFFFFF',
+    color: COLORS.creamLight,
     marginBottom: 32,
     textAlign: 'center' as const,
     lineHeight: 36,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: COLORS.cardBg,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold' as const,
-    color: '#667eea',
+    color: COLORS.accent,
     marginBottom: 12,
   },
   text: {
     fontSize: 16,
-    color: '#333333',
+    color: COLORS.cream,
     lineHeight: 24,
   },
   button: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 18,
     borderRadius: 12,
-    alignItems: 'center' as const,
+    overflow: 'hidden',
     marginTop: 24,
-    shadowColor: '#000',
+    shadowColor: COLORS.accent,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
+  },
+  buttonGradient: {
+    paddingVertical: 18,
+    alignItems: 'center' as const,
+    borderRadius: 12,
   },
   buttonText: {
     fontSize: 18,
     fontWeight: 'bold' as const,
-    color: '#667eea',
+    color: COLORS.creamLight,
   },
   footer: {
     fontSize: 13,
-    color: '#FFFFFF',
+    color: COLORS.cream,
     textAlign: 'center' as const,
     marginTop: 24,
     opacity: 0.9,

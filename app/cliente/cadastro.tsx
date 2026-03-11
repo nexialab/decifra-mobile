@@ -16,6 +16,7 @@ import { useState } from 'react';
   import { LinearGradient } from 'expo-linear-gradient';
   import { supabase } from '@/lib/supabase/client';
   import AsyncStorage from '@react-native-async-storage/async-storage';
+  import { COLORS } from '@/constants/colors';
 
   export default function ClienteCadastroScreen() {
     const router = useRouter();
@@ -33,13 +34,11 @@ import { useState } from 'react';
         return;
       }
 
-      // Email é opcional
       const emailValue = email.trim() || null;
 
       setLoading(true);
 
       try {
-        // Criar cliente no banco
         const { data: clienteData, error: clienteError } = await supabase
           .from('clientes')
           .insert({
@@ -59,7 +58,6 @@ import { useState } from 'react';
           return;
         }
 
-        // Marcar código como usado
         await supabase
           .from('codigos')
           .update({
@@ -68,10 +66,8 @@ import { useState } from 'react';
           })
           .eq('id', codigoId);
 
-        // Salvar ID do cliente localmente
         await AsyncStorage.setItem('clienteId', clienteData.id);
 
-        // Redirecionar para instruções do teste
         router.replace({
           pathname: '/cliente/instrucoes',
           params: {
@@ -87,7 +83,7 @@ import { useState } from 'react';
     };
 
     return (
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
+      <LinearGradient colors={[...COLORS.gradient]} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -113,7 +109,7 @@ import { useState } from 'react';
                     <TextInput
                       style={styles.input}
                       placeholder="Seu nome"
-                      placeholderTextColor="#999"
+                      placeholderTextColor={COLORS.textMuted}
                       value={nome}
                       onChangeText={setNome}
                       autoCapitalize="words"
@@ -125,7 +121,7 @@ import { useState } from 'react';
                     <TextInput
                       style={styles.input}
                       placeholder="seuemail@exemplo.com"
-                      placeholderTextColor="#999"
+                      placeholderTextColor={COLORS.textMuted}
                       value={email}
                       onChangeText={setEmail}
                       keyboardType="email-address"
@@ -139,16 +135,23 @@ import { useState } from 'react';
                     disabled={loading}
                   >
                     {loading ? (
-                      <ActivityIndicator color="#667eea" />
+                      <ActivityIndicator color={COLORS.accent} />
                     ) : (
-                      <Text style={styles.buttonText}>Iniciar Teste</Text>
+                      <LinearGradient
+                        colors={[...COLORS.gradientButton]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.buttonGradient}
+                      >
+                        <Text style={styles.buttonText}>Iniciar Teste</Text>
+                      </LinearGradient>
                     )}
                   </TouchableOpacity>
                 </View>
 
                 <View style={styles.privacyBox}>
                   <Text style={styles.privacyText}>
-                    🔒 Seus dados são privados e serão compartilhados apenas com sua treinadora
+                    Seus dados são privados e serão compartilhados apenas com sua treinadora
                   </Text>
                 </View>
               </View>
@@ -180,7 +183,9 @@ import { useState } from 'react';
     },
     badge: {
       alignSelf: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+      backgroundColor: COLORS.cardBg,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 20,
@@ -189,19 +194,19 @@ import { useState } from 'react';
     badgeText: {
       fontSize: 14,
       fontWeight: '600',
-      color: '#FFFFFF',
+      color: COLORS.accent,
       letterSpacing: 1,
     },
     title: {
       fontSize: 32,
       fontWeight: 'bold',
-      color: '#FFFFFF',
+      color: COLORS.creamLight,
       marginBottom: 12,
       textAlign: 'center',
     },
     subtitle: {
       fontSize: 16,
-      color: '#FFFFFF',
+      color: COLORS.cream,
       opacity: 0.9,
       marginBottom: 40,
       textAlign: 'center',
@@ -215,33 +220,34 @@ import { useState } from 'react';
     },
     label: {
       fontSize: 14,
-      color: '#FFFFFF',
+      color: COLORS.cream,
       marginBottom: 8,
       fontWeight: '600',
     },
     input: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: COLORS.inputBg,
+      borderWidth: 1,
+      borderColor: COLORS.inputBorder,
       paddingVertical: 16,
       paddingHorizontal: 20,
       borderRadius: 12,
       fontSize: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      color: COLORS.creamLight,
     },
     button: {
-      backgroundColor: '#FFFFFF',
-      paddingVertical: 18,
       borderRadius: 12,
-      alignItems: 'center',
+      overflow: 'hidden',
       marginTop: 8,
-      shadowColor: '#000',
+      shadowColor: COLORS.accent,
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
+      shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 5,
+    },
+    buttonGradient: {
+      paddingVertical: 18,
+      alignItems: 'center',
+      borderRadius: 12,
     },
     buttonDisabled: {
       opacity: 0.7,
@@ -249,19 +255,20 @@ import { useState } from 'react';
     buttonText: {
       fontSize: 18,
       fontWeight: '600',
-      color: '#667eea',
+      color: COLORS.creamLight,
     },
     privacyBox: {
       marginTop: 32,
       padding: 16,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: COLORS.cardBg,
       borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.cardBorder,
     },
     privacyText: {
       fontSize: 13,
-      color: '#FFFFFF',
+      color: COLORS.cream,
       textAlign: 'center',
       lineHeight: 20,
     },
   });
-  

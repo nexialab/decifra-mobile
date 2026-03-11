@@ -2,6 +2,7 @@ import { View, Dimensions } from 'react-native';
   import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
   import { FATORES } from '@/constants/ipip';
   import type { FatorKey } from '@/constants/ipip';
+  import { COLORS } from '@/constants/colors';
 
   interface MandalaProps {
     scores: Array<{
@@ -15,15 +16,13 @@ import { View, Dimensions } from 'react-native';
     const center = size / 2;
     const maxRadius = (size / 2) - 40;
     
-    // Ordenar fatores na ordem correta (N, E, O, A, C)
     const fatoresOrdenados: FatorKey[] = ['N', 'E', 'O', 'A', 'C'];
     const scoresOrdenados = fatoresOrdenados.map(fator =>
       scores.find(s => s.fator === fator) || { fator, percentil: 50 }
     );
 
-    // Calcular pontos do polígono
     const calcularPonto = (percentil: number, index: number) => {
-      const angle = (index * 2 * Math.PI) / 5 - Math.PI / 2; // Começar do topo
+      const angle = (index * 2 * Math.PI) / 5 - Math.PI / 2;
       const radius = (percentil / 100) * maxRadius;
       return {
         x: center + radius * Math.cos(angle),
@@ -37,7 +36,6 @@ import { View, Dimensions } from 'react-native';
 
     const pontosString = pontos.map(p => `${p.x},${p.y}`).join(' ');
 
-    // Calcular posições dos labels
     const calcularLabelPonto = (index: number) => {
       const angle = (index * 2 * Math.PI) / 5 - Math.PI / 2;
       const radius = maxRadius + 20;
@@ -50,20 +48,18 @@ import { View, Dimensions } from 'react-native';
     return (
       <View style={{ width: size, height: size }}>
         <Svg width={size} height={size}>
-          {/* Círculos de referência (20%, 40%, 60%, 80%, 100%) */}
           {[0.2, 0.4, 0.6, 0.8, 1.0].map((ratio, i) => (
             <Circle
               key={i}
               cx={center}
               cy={center}
               r={maxRadius * ratio}
-              stroke="#E0E0E0"
+              stroke={COLORS.inputBorder}
               strokeWidth="1"
               fill="none"
             />
           ))}
 
-          {/* Linhas dos eixos */}
           {scoresOrdenados.map((_, index) => {
             const ponto = calcularLabelPonto(index);
             return (
@@ -73,32 +69,29 @@ import { View, Dimensions } from 'react-native';
                 y1={center}
                 x2={ponto.x}
                 y2={ponto.y}
-                stroke="#E0E0E0"
+                stroke={COLORS.inputBorder}
                 strokeWidth="1"
               />
             );
           })}
 
-          {/* Polígono dos scores */}
           <Polygon
             points={pontosString}
-            fill="rgba(102, 126, 234, 0.3)"
-            stroke="#667eea"
+            fill="rgba(232, 75, 43, 0.3)"
+            stroke={COLORS.accent}
             strokeWidth="3"
           />
 
-          {/* Pontos nos vértices */}
           {pontos.map((ponto, index) => (
             <Circle
               key={index}
               cx={ponto.x}
               cy={ponto.y}
               r="6"
-              fill="#667eea"
+              fill={COLORS.accent}
             />
           ))}
 
-          {/* Labels dos fatores */}
           {scoresOrdenados.map((score, index) => {
             const labelPonto = calcularLabelPonto(index);
             const nomeFator = FATORES[score.fator];
@@ -108,7 +101,7 @@ import { View, Dimensions } from 'react-native';
                 key={index}
                 x={labelPonto.x}
                 y={labelPonto.y}
-                fill="#333"
+                fill={COLORS.cream}
                 fontSize="14"
                 fontWeight="bold"
                 textAnchor="middle"
@@ -121,4 +114,3 @@ import { View, Dimensions } from 'react-native';
       </View>
     );
   }
-  

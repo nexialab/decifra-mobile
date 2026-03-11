@@ -14,6 +14,7 @@ import { useState } from 'react';
   import { useRouter } from 'expo-router';
   import { LinearGradient } from 'expo-linear-gradient';
   import { useAuth } from '@/lib/supabase/useAuth';
+  import { COLORS } from '@/constants/colors';
 
   export default function TreinadoraLoginScreen() {
     const router = useRouter();
@@ -41,7 +42,7 @@ import { useState } from 'react';
     };
 
     return (
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
+      <LinearGradient colors={[...COLORS.gradient]} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -57,7 +58,7 @@ import { useState } from 'react';
                 <TextInput
                   style={styles.input}
                   placeholder="Email"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={COLORS.textMuted}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -68,7 +69,7 @@ import { useState } from 'react';
                 <TextInput
                   style={styles.input}
                   placeholder="Senha"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={COLORS.textMuted}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
@@ -76,15 +77,22 @@ import { useState } from 'react';
                 />
 
                 <TouchableOpacity
-                  style={[styles.button, loading && styles.buttonDisabled]}
+                  style={[styles.buttonWrapper, loading && styles.buttonDisabled]}
                   onPress={handleLogin}
                   disabled={loading}
                 >
-                  {loading ? (
-                    <ActivityIndicator color="#667eea" />
-                  ) : (
-                    <Text style={styles.buttonText}>Entrar</Text>
-                  )}
+                  <LinearGradient
+                    colors={[...COLORS.gradientButton]}
+                    style={styles.button}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color={COLORS.creamLight} />
+                    ) : (
+                      <Text style={styles.buttonText}>Entrar</Text>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -127,14 +135,14 @@ import { useState } from 'react';
     },
     title: {
       fontSize: 32,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
+      fontWeight: 'bold' as const,
+      color: COLORS.creamLight,
       marginBottom: 8,
       textAlign: 'center',
     },
     subtitle: {
       fontSize: 16,
-      color: '#FFFFFF',
+      color: COLORS.cream,
       opacity: 0.9,
       marginBottom: 40,
       textAlign: 'center',
@@ -143,57 +151,58 @@ import { useState } from 'react';
       width: '100%',
     },
     input: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: COLORS.inputBg,
       paddingVertical: 16,
       paddingHorizontal: 20,
       borderRadius: 12,
       fontSize: 16,
+      color: COLORS.cream,
       marginBottom: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      borderWidth: 1,
+      borderColor: COLORS.inputBorder,
+    },
+    buttonWrapper: {
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginTop: 8,
+      shadowColor: COLORS.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 5,
     },
     button: {
-      backgroundColor: '#FFFFFF',
       paddingVertical: 18,
       borderRadius: 12,
       alignItems: 'center',
-      marginTop: 8,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 5,
     },
     buttonDisabled: {
       opacity: 0.7,
     },
     buttonText: {
       fontSize: 18,
-      fontWeight: '600',
-      color: '#667eea',
+      fontWeight: '600' as const,
+      color: COLORS.creamLight,
     },
     linkContainer: {
       marginTop: 24,
       alignItems: 'center',
     },
     linkText: {
-      color: '#FFFFFF',
+      color: COLORS.cream,
       fontSize: 16,
     },
     linkBold: {
-      fontWeight: 'bold',
+      fontWeight: 'bold' as const,
+      color: COLORS.accentGlow,
     },
     backButton: {
       marginTop: 16,
       alignItems: 'center',
     },
     backText: {
-      color: '#FFFFFF',
+      color: COLORS.cream,
       fontSize: 16,
       opacity: 0.8,
     },
   });
-  
