@@ -152,67 +152,66 @@ async function gerarPDFMobile(html: string, dados: PDFData): Promise<void> {
 }
 
 /**
- * Logo em HTML/CSS puro - Máxima compatibilidade com PDF
- * Design: Flor de lótus estilizada com círculo central
+ * Logo usando TABELA HTML - Máxima compatibilidade com renderizadores de PDF
+ * O renderizador nativo não suporta position:absolute, transform, nem SVG complexo
  */
 function getLogoHTML(): string {
   const terracota = '#C4785A';
-  const vinho = '#6B2D3A';
   const cream = '#F5F0E8';
   const vinhoDeep = '#2D1518';
   
   return `
-    <div style="width: 80px; height: 80px; margin: 0 auto; position: relative;">
-      <!-- Círculo externo -->
-      <div style="
-        position: absolute;
-        width: 76px; height: 76px;
-        border: 2px solid ${terracota};
-        border-radius: 50%;
-        top: 2px; left: 2px;
-        background: ${vinhoDeep};
-      "></div>
-      
-      <!-- 8 Pétalas ao redor (posicionadas manualmente) -->
-      <!-- Superior -->
-      <div style="position: absolute; width: 14px; height: 20px; background: ${terracota}; border-radius: 50%; top: 6px; left: 33px;"></div>
-      <!-- Superior-direita -->
-      <div style="position: absolute; width: 14px; height: 20px; background: ${terracota}; border-radius: 50%; top: 12px; left: 50px; transform: rotate(45deg);"></div>
-      <!-- Direita -->
-      <div style="position: absolute; width: 14px; height: 20px; background: ${terracota}; border-radius: 50%; top: 30px; left: 56px; transform: rotate(90deg);"></div>
-      <!-- Inferior-direita -->
-      <div style="position: absolute; width: 14px; height: 20px; background: ${terracota}; border-radius: 50%; top: 48px; left: 50px; transform: rotate(135deg);"></div>
-      <!-- Inferior -->
-      <div style="position: absolute; width: 14px; height: 20px; background: ${terracota}; border-radius: 50%; top: 54px; left: 33px; transform: rotate(180deg);"></div>
-      <!-- Inferior-esquerda -->
-      <div style="position: absolute; width: 14px; height: 20px; background: ${terracota}; border-radius: 50%; top: 48px; left: 16px; transform: rotate(225deg);"></div>
-      <!-- Esquerda -->
-      <div style="position: absolute; width: 14px; height: 20px; background: ${terracota}; border-radius: 50%; top: 30px; left: 10px; transform: rotate(270deg);"></div>
-      <!-- Superior-esquerda -->
-      <div style="position: absolute; width: 14px; height: 20px; background: ${terracota}; border-radius: 50%; top: 12px; left: 16px; transform: rotate(315deg);"></div>
-      
-      <!-- Círculo central -->
-      <div style="
-        position: absolute;
-        width: 36px; height: 36px;
-        background: ${cream};
-        border: 2px solid ${terracota};
-        border-radius: 50%;
-        top: 22px; left: 22px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <span style="
-          font-size: 22px;
-          font-weight: 800;
-          color: ${vinhoDeep};
-          font-family: Georgia, serif;
-          font-style: italic;
-          line-height: 1;
-        ">D</span>
-      </div>
-    </div>
+    <!-- Logo em tabela 5x5 para máxima compatibilidade -->
+    <table style="margin: 0 auto; border-collapse: separate; border-spacing: 2px;">
+      <tr>
+        <td style="width: 12px; height: 12px;"></td>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+        <td style="width: 12px; height: 12px;"></td>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+        <td style="width: 12px; height: 12px;"></td>
+      </tr>
+      <tr>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+        <td colspan="3" rowspan="3" style="
+          width: 52px; height: 52px;
+          background: ${vinhoDeep};
+          border: 3px solid ${terracota};
+          border-radius: 50%;
+          text-align: center;
+          vertical-align: middle;
+        ">
+          <div style="
+            width: 32px; height: 32px;
+            background: ${cream};
+            border: 2px solid ${terracota};
+            border-radius: 50%;
+            margin: 0 auto;
+            line-height: 32px;
+            font-size: 18px;
+            font-weight: 800;
+            color: ${vinhoDeep};
+            font-family: Georgia, serif;
+            font-style: italic;
+          ">D</div>
+        </td>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+      </tr>
+      <tr>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+      </tr>
+      <tr>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+      </tr>
+      <tr>
+        <td style="width: 12px; height: 12px;"></td>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+        <td style="width: 12px; height: 12px;"></td>
+        <td style="width: 16px; height: 16px; background: ${terracota}; border-radius: 50%;"></td>
+        <td style="width: 12px; height: 12px;"></td>
+      </tr>
+    </table>
   `;
 }
 
