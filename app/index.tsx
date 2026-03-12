@@ -187,10 +187,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 32,
-    paddingVertical: 40,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
   iconSection: {
     marginBottom: 32,
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
   },
   textSection: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 32,
   },
   brandName: {
     fontSize: 18,
@@ -281,6 +282,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     gap: 16,
+    marginBottom: 8,
   },
   buttonPrimary: {
     borderRadius: 16,
@@ -315,9 +317,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   footer: {
-    position: 'absolute',
-    bottom: 32,
     alignItems: 'center',
+    marginTop: 8,
   },
   footerBrand: {
     fontSize: 14,
@@ -333,14 +334,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   adminButton: {
-    position: 'absolute',
-    bottom: 90,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginTop: 16,
+    marginBottom: 8,
   },
   adminText: {
     fontSize: 12,
