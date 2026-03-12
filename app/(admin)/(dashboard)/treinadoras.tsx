@@ -60,6 +60,9 @@ export default function TreinadorasScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState({ nome: '', email: '' });
 
+  // Estado para modal de confirmação de exclusão
+  const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+
   // Filtra treinadoras pela busca
   const filteredTreinadoras = useMemo(() => {
     if (!searchQuery.trim()) return treinadoras;
@@ -179,24 +182,14 @@ export default function TreinadorasScreen() {
     console.log('[Excluir] Abrindo confirmação...', treinadoraSelecionada?.id);
     if (!treinadoraSelecionada) return;
     setMenuVisible(false);
-    
-    setTimeout(() => {
-      Alert.alert(
-        'Confirmar Exclusão',
-        `Deseja realmente excluir a treinadora "${treinadoraSelecionada.nome}"?\n\nEsta ação não pode ser desfeita.`,
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { 
-            text: 'Excluir', 
-            style: 'destructive',
-            onPress: () => {
-              console.log('[Excluir] Botão Excluir pressionado');
-              handleExcluirTreinadora();
-            }
-          }
-        ]
-      );
-    }, 300);
+    setConfirmDeleteVisible(true);
+  };
+
+  // Confirmar e executar exclusão
+  const handleConfirmarExclusao = () => {
+    console.log('[Excluir] Confirmando exclusão...');
+    setConfirmDeleteVisible(false);
+    handleExcluirTreinadora();
   };
 
   // Função para excluir treinadora
@@ -253,11 +246,10 @@ export default function TreinadorasScreen() {
 
       // Excluir códigos da treinadora
       console.log('[Excluir] Excluindo códigos...');
-      const { error: codigosError, count: codigosCount } = await supabase
+      const { error: codigosError } = await supabase
         .from('codigos')
         .delete()
-        .eq('treinadora_id', treinadoraSelecionada.id)
-        .select('count');
+        .eq('treinadora_id', treinadoraSelecionada.id);
 
       if (codigosError) {
         console.error('[Excluir] Erro ao excluir códigos:', codigosError);
@@ -754,6 +746,60 @@ export default function TreinadorasScreen() {
         </View>
       </Modal>
 
+      {/* Modal de confirmação de exclusão */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={confirmDeleteVisible}
+        onRequestClose={() => setConfirmDeleteVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxWidth: 400 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: '#F44336' }]}>Confirmar Exclusão</Text>
+              <TouchableOpacity onPress={() => setConfirmDeleteVisible(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={{ color: ADMIN_COLORS.text, fontSize: 16, marginBottom: 8 }}>
+                Deseja realmente excluir a treinadora?
+              </Text>
+              {treinadoraSelecionada && (
+                <Text style={{ color: ADMIN_COLORS.accent, fontSize: 18, fontWeight: '600', marginBottom: 16 }}>
+                  "{treinadoraSelecionada.nome}"
+                </Text>
+              )}
+              <Text style={{ color: ADMIN_COLORS.textMuted, fontSize: 14 }}>
+                Esta ação não pode ser desfeita. Todos os códigos e clientes associados também serão excluídos.
+              </Text>
+            </View>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.modalBtnSecondary} 
+                onPress={() => setConfirmDeleteVisible(false)}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.modalBtnSecondaryText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalBtnDanger, isSubmitting && styles.modalBtnDisabled]}
+                onPress={handleConfirmarExclusao}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color={ADMIN_COLORS.text} />
+                ) : (
+                  <Text style={styles.modalBtnDangerText}>Excluir</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Modal para editar treinadora */}
       <Modal
         animationType="slide"
@@ -1180,6 +1226,17 @@ const styles = StyleSheet.create({
   },
   modalBtnDisabled: {
     opacity: 0.6,
+  },
+  modalBtnDanger: {
+    backgroundColor: '#F44336',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  modalBtnDangerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: ADMIN_COLORS.text,
   },
   menuBtn: {
     width: 32,
