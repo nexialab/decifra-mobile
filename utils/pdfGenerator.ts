@@ -128,27 +128,7 @@ async function gerarPDFMobile(html: string, dados: PDFData): Promise<void> {
     const tempUri = result.uri;
     console.log('[PDF Mobile] PDF temporário em:', tempUri);
     
-    // 2. Preparar nome do arquivo
-    const nomeSanitizado = sanitizarNomeArquivo(dados.cliente.nome);
-    const tipoRelatorio = dados.tipo === 'treinadora' ? 'Completo' : 'Resumido';
-    const nomeArquivo = `DECIFRA_${tipoRelatorio}_${nomeSanitizado}.pdf`;
-    
-    // 3. Verificar diretório
-    const diretorioCache = FileSystem.cacheDirectory || FileSystem.documentDirectory;
-    console.log('[PDF Mobile] Diretório cache:', diretorioCache);
-    console.log('[PDF Mobile] Document directory:', FileSystem.documentDirectory);
-    
-    if (!diretorioCache) {
-      throw new Error('Diretório de cache não disponível');
-    }
-    
-    // Garantir que o caminho termina com /
-    const diretorioBase = diretorioCache.endsWith('/') ? diretorioCache : `${diretorioCache}/`;
-    const uriFinal = `${diretorioBase}${nomeArquivo}`;
-    
-    console.log('[PDF Mobile] URI final:', uriFinal);
-    
-    // 4. Verificar se arquivo temporário existe
+    // 2. Verificar se arquivo temporário existe
     const tempFileInfo = await FileSystem.getInfoAsync(tempUri);
     console.log('[PDF Mobile] Info arquivo temp:', tempFileInfo);
     
@@ -156,30 +136,8 @@ async function gerarPDFMobile(html: string, dados: PDFData): Promise<void> {
       throw new Error('Arquivo PDF temporário não foi criado');
     }
     
-    // 5. Copiar arquivo
-    console.log('[PDF Mobile] Copiando arquivo...');
-    await FileSystem.copyAsync({
-      from: tempUri,
-      to: uriFinal,
-    });
-    
-    // 6. Verificar se copiou
-    const finalFileInfo = await FileSystem.getInfoAsync(uriFinal);
-    console.log('[PDF Mobile] Info arquivo final:', finalFileInfo);
-    
-    if (!finalFileInfo.exists) {
-      throw new Error('Arquivo PDF final não foi criado');
-    }
-    
-    // 7. Limpar temp
-    try {
-      await FileSystem.deleteAsync(tempUri, { idempotent: true });
-      console.log('[PDF Mobile] Arquivo temporário removido');
-    } catch (e) {
-      console.warn('[PDF Mobile] Erro ao remover temp:', e);
-    }
-
-    // 8. Verificar sharing
+    // 3. No iOS/Android, usamos o arquivo temporário diretamente
+    // pois FileSystem.cacheDirectory pode ser undefined no Expo Go
     console.log('[PDF Mobile] Verificando Sharing...');
     const isAvailable = await Sharing.isAvailableAsync();
     console.log('[PDF Mobile] Sharing disponível:', isAvailable);
@@ -188,9 +146,9 @@ async function gerarPDFMobile(html: string, dados: PDFData): Promise<void> {
       throw new Error('Compartilhamento não disponível neste dispositivo');
     }
 
-    // 9. Compartilhar
-    console.log('[PDF Mobile] Abrindo share sheet...');
-    await Sharing.shareAsync(uriFinal, {
+    // 4. Compartilhar o arquivo temporário diretamente
+    console.log('[PDF Mobile] Abrindo share sheet com:', tempUri);
+    await Sharing.shareAsync(tempUri, {
       UTI: '.pdf',
       mimeType: 'application/pdf',
       dialogTitle: 'Compartilhar Resultado DECIFRA',
