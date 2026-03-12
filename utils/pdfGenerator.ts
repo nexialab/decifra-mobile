@@ -2,8 +2,10 @@
  * Gerador de PDF para Resultados DECIFRA
  * Usa expo-print e expo-sharing para gerar e compartilhar PDFs
  * 
- * Na WEB: Abre o diálogo de impressão do navegador
- * No Mobile (iOS/Android): Gera arquivo PDF e compartilha
+ * Identidade Visual Ártio:
+ * - Cores: Terracota (#C4785A) → Vinho (#6B2D3A)
+ * - Background: Gradient escuro (#2D1518 → #3D1A1E)
+ * - Logo: Ícone DECIFRA no header
  */
 
 import * as Print from 'expo-print';
@@ -51,30 +53,39 @@ interface PDFData {
   tipo: 'cliente' | 'treinadora';
 }
 
+// Cores da identidade Ártio
+const COLORS = {
+  vinhoDeep: '#2D1518',
+  vinhoDark: '#3D1A1E',
+  vinho: '#6B2D3A',
+  terracota: '#C4785A',
+  terracotaLight: '#D4896A',
+  cream: '#F5F0E8',
+  creamLight: '#FAF8F5',
+  creamDark: '#E8E0D1',
+  textDark: '#2D2420',
+};
+
 /**
  * Sanitiza o nome do arquivo removendo caracteres inválidos
  */
 function sanitizarNomeArquivo(nome: string): string {
   return nome
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[^a-zA-Z0-9\s-]/g, '') // Remove caracteres especiais
-    .replace(/\s+/g, '_') // Substitui espaços por underscore
-    .substring(0, 50); // Limita tamanho
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s-]/g, '')
+    .replace(/\s+/g, '_')
+    .substring(0, 50);
 }
 
 /**
  * Gera e compartilha um PDF com os resultados do teste
- * 
- * WEB: Abre o diálogo de impressão do navegador
- * iOS/Android: Gera arquivo PDF e abre compartilhamento
  */
 export async function gerarPDF(dados: PDFData): Promise<void> {
   console.log('[PDF] Iniciando geração do PDF para:', dados.cliente.nome);
   console.log('[PDF] Plataforma:', Platform.OS);
   
   try {
-    // Valida dados
     if (!dados.cliente?.nome) {
       throw new Error('Nome do cliente é obrigatório');
     }
@@ -82,11 +93,9 @@ export async function gerarPDF(dados: PDFData): Promise<void> {
       throw new Error('Scores dos fatores são obrigatórios');
     }
     
-    // Gera HTML
     const html = gerarTemplateHTML(dados);
     console.log('[PDF] HTML gerado, tamanho:', html.length, 'caracteres');
     
-    // Comportamento diferente para WEB vs Mobile
     if (Platform.OS === 'web') {
       await gerarPDFWeb(html, dados);
     } else {
@@ -101,41 +110,33 @@ export async function gerarPDF(dados: PDFData): Promise<void> {
 }
 
 /**
- * Gera PDF na WEB - Abre diálogo de impressão ou cria download
+ * Gera PDF na WEB
  */
 async function gerarPDFWeb(html: string, dados: PDFData): Promise<void> {
   console.log('[PDF] Modo WEB detectado');
-  
-  // Cria uma nova janela com o conteúdo HTML
-  const nomeArquivo = `DECIFRA_${dados.tipo === 'treinadora' ? 'Completo' : 'Resumido'}_${sanitizarNomeArquivo(dados.cliente.nome)}.pdf`;
   
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     throw new Error('Não foi possível abrir a janela de impressão. Verifique se o pop-up está bloqueado.');
   }
   
-  // Escreve o HTML na nova janela
   printWindow.document.write(html);
   printWindow.document.close();
   
-  // Aguarda um pouco para o CSS ser aplicado
   setTimeout(() => {
     printWindow.focus();
     printWindow.print();
-    // Não fecha a janela automaticamente para permitir salvar como PDF
   }, 500);
   
   console.log('[PDF] Janela de impressão aberta');
 }
 
 /**
- * Gera PDF no Mobile (iOS/Android)
+ * Gera PDF no Mobile
  */
 async function gerarPDFMobile(html: string, dados: PDFData): Promise<void> {
   console.log('[PDF] Modo Mobile detectado');
   
-  // Gera o PDF em arquivo temporário
-  console.log('[PDF] Chamando Print.printToFileAsync...');
   const result = await Print.printToFileAsync({
     html,
     base64: false,
@@ -146,16 +147,12 @@ async function gerarPDFMobile(html: string, dados: PDFData): Promise<void> {
   }
   
   console.log('[PDF] Arquivo temporário criado:', result.uri);
-  console.log('[PDF] Número de páginas:', result.numberOfPages);
   
   const tempUri = result.uri;
-
-  // Cria nome personalizado do arquivo
   const nomeSanitizado = sanitizarNomeArquivo(dados.cliente.nome);
   const tipoRelatorio = dados.tipo === 'treinadora' ? 'Completo' : 'Resumido';
   const nomeArquivo = `DECIFRA_${tipoRelatorio}_${nomeSanitizado}.pdf`;
   
-  // Define o caminho final no diretório de cache
   const diretorioCache = FileSystem.cacheDirectory || FileSystem.documentDirectory;
   if (!diretorioCache) {
     throw new Error('Diretório de cache não disponível');
@@ -163,21 +160,15 @@ async function gerarPDFMobile(html: string, dados: PDFData): Promise<void> {
   
   const uriFinal = `${diretorioCache}${nomeArquivo}`;
   
-  // Copia o arquivo com o nome personalizado
-  console.log('[PDF] Copiando arquivo para:', uriFinal);
   await FileSystem.copyAsync({
     from: tempUri,
     to: uriFinal,
   });
   
-  // Remove o arquivo temporário
   try {
     await FileSystem.deleteAsync(tempUri, { idempotent: true });
-  } catch (e) {
-    // Ignora erro ao deletar arquivo temporário
-  }
+  } catch (e) {}
 
-  // Verifica se o compartilhamento está disponível
   const isAvailable = await Sharing.isAvailableAsync();
   
   if (!isAvailable) {
@@ -193,20 +184,32 @@ async function gerarPDFMobile(html: string, dados: PDFData): Promise<void> {
 }
 
 /**
- * Gera o template HTML para o PDF
+ * Gera o template HTML para o PDF com identidade visual Ártio
  */
 function gerarTemplateHTML(dados: PDFData): string {
   const { cliente, resultado, protocolos, codigo, dataTeste, tipo } = dados;
-  
   const isTreinadora = tipo === 'treinadora';
   
-  // Ordenar fatores na ordem correta: N, E, O, A, C
   const ordemFatores: FatorKey[] = ['N', 'E', 'O', 'A', 'C'];
   const scoresOrdenados = ordemFatores.map(fator => 
     resultado.scores_fatores.find(s => s.fator === fator)
   ).filter((s): s is FatorScore => s !== undefined);
 
-  // Gera HTML das facetas se for relatório de treinadora
+  // Logo SVG inline (símbolo estilizado DECIFRA)
+  const logoSVG = `
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto 12px; display: block;">
+      <defs>
+        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:${COLORS.terracota};stop-opacity:1" />
+          <stop offset="100%" style="stop-color:${COLORS.vinho};stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <circle cx="24" cy="24" r="22" fill="url(#logoGradient)" stroke="${COLORS.cream}" stroke-width="2"/>
+      <text x="24" y="30" text-anchor="middle" fill="${COLORS.cream}" font-size="20" font-weight="bold" font-family="serif">D</text>
+    </svg>
+  `;
+
+  // Facetas HTML
   let facetasHTML = '';
   if (isTreinadora && resultado.scores_facetas && resultado.scores_facetas.length > 0) {
     const facetasPorColuna = Math.ceil(resultado.scores_facetas.length / 2);
@@ -214,20 +217,21 @@ function gerarTemplateHTML(dados: PDFData): string {
     const coluna2 = resultado.scores_facetas.slice(facetasPorColuna);
     
     facetasHTML = `
-      <div style="margin-top: 24px; page-break-inside: avoid;">
-        <div style="font-size: 18px; font-weight: 700; color: #6B2D3A; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #C4785A;">
+      <div style="margin-top: 32px; page-break-inside: avoid;">
+        <div style="font-size: 20px; font-weight: 700; color: ${COLORS.cream}; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid ${COLORS.terracota}; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">🔬</span>
           30 Facetas Detalhadas
         </div>
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
             <td style="width: 50%; vertical-align: top; padding-right: 8px;">
               ${coluna1.map(f => `
-                <div style="background: #F5F0E8; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #E8E0D1;">
+                <div style="background: ${COLORS.vinhoDark}; padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid ${COLORS.terracota}40;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #6B2D3A; font-size: 12px;">${f.faceta}</span>
+                    <span style="font-weight: 700; color: ${COLORS.cream}; font-size: 13px;">${f.faceta}</span>
                     <span style="text-align: right;">
-                      <span style="font-weight: 700; color: #C4785A; font-size: 12px;">${f.percentil}%</span>
-                      <span style="font-size: 10px; color: #888; display: block;">${f.classificacao}</span>
+                      <span style="font-weight: 700; color: ${COLORS.terracota}; font-size: 14px;">${f.percentil}%</span>
+                      <span style="font-size: 11px; color: ${COLORS.creamDark}; display: block; margin-top: 2px;">${f.classificacao}</span>
                     </span>
                   </div>
                 </div>
@@ -235,12 +239,12 @@ function gerarTemplateHTML(dados: PDFData): string {
             </td>
             <td style="width: 50%; vertical-align: top; padding-left: 8px;">
               ${coluna2.map(f => `
-                <div style="background: #F5F0E8; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #E8E0D1;">
+                <div style="background: ${COLORS.vinhoDark}; padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid ${COLORS.terracota}40;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #6B2D3A; font-size: 12px;">${f.faceta}</span>
+                    <span style="font-weight: 700; color: ${COLORS.cream}; font-size: 13px;">${f.faceta}</span>
                     <span style="text-align: right;">
-                      <span style="font-weight: 700; color: #C4785A; font-size: 12px;">${f.percentil}%</span>
-                      <span style="font-size: 10px; color: #888; display: block;">${f.classificacao}</span>
+                      <span style="font-weight: 700; color: ${COLORS.terracota}; font-size: 14px;">${f.percentil}%</span>
+                      <span style="font-size: 11px; color: ${COLORS.creamDark}; display: block; margin-top: 2px;">${f.classificacao}</span>
                     </span>
                   </div>
                 </div>
@@ -252,45 +256,47 @@ function gerarTemplateHTML(dados: PDFData): string {
     `;
   }
 
-  // Gera HTML dos protocolos
+  // Protocolos HTML
   const protocolosHTML = protocolos.length > 0 
     ? protocolos.map((p, i) => `
-      <div style="background: #FAF8F5; border-radius: 10px; padding: 16px; margin-bottom: 12px; border: 1px solid #E8E0D1; page-break-inside: avoid;">
-        <div style="display: flex; align-items: flex-start; gap: 12px;">
-          <div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: ${i < 3 ? '#C4785A' : '#6B2D3A'}; color: white; border-radius: 50%; font-weight: 700; font-size: 13px; flex-shrink: 0;">${i + 1}</div>
+      <div style="background: ${COLORS.vinhoDark}; border-radius: 12px; padding: 18px; margin-bottom: 14px; border: 1px solid ${COLORS.terracota}40; page-break-inside: avoid;">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: ${i < 3 ? COLORS.terracota : COLORS.vinho}; color: ${COLORS.cream}; border-radius: 50%; font-weight: 700; font-size: 14px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${i + 1}</div>
           <div style="flex: 1;">
-            <div style="font-weight: 600; color: #2D2420; font-size: 14px; margin-bottom: 4px;">${p.titulo}</div>
-            <div style="font-size: 13px; color: #666; line-height: 1.5;">${p.descricao}</div>
+            <div style="font-weight: 700; color: ${COLORS.cream}; font-size: 15px; margin-bottom: 6px; line-height: 1.3;">${p.titulo}</div>
+            <div style="font-size: 13px; color: ${COLORS.creamDark}; line-height: 1.6;">${p.descricao}</div>
           </div>
         </div>
       </div>
     `).join('')
     : `
-      <div style="background: #FAF8F5; border-radius: 10px; padding: 16px; border: 1px solid #E8E0D1;">
-        <div style="text-align: center; color: #888; font-size: 14px;">
+      <div style="background: ${COLORS.vinhoDark}; border-radius: 12px; padding: 24px; border: 1px solid ${COLORS.terracota}40; text-align: center;">
+        <div style="color: ${COLORS.creamDark}; font-size: 14px; font-style: italic;">
           Nenhum protocolo recomendado para este perfil.
         </div>
       </div>
     `;
 
-  // Gera HTML dos fatores
+  // Fatores HTML
   const fatoresHTML = scoresOrdenados.map(f => `
-    <div style="background: #FAF8F5; border-radius: 10px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #C4785A; page-break-inside: avoid;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <span style="font-weight: 600; font-size: 15px; color: #2D2420;">${FATORES[f.fator]}</span>
-        <span style="background: #C4785A; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">${f.classificacao}</span>
+    <div style="background: ${COLORS.vinhoDark}; border-radius: 14px; padding: 20px; margin-bottom: 14px; border-left: 4px solid ${COLORS.terracota}; box-shadow: 0 4px 12px rgba(0,0,0,0.2); page-break-inside: avoid;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <span style="font-weight: 700; font-size: 17px; color: ${COLORS.cream};">${FATORES[f.fator]}</span>
+        <span style="background: linear-gradient(135deg, ${COLORS.terracota} 0%, ${COLORS.vinho} 100%); color: ${COLORS.cream}; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${f.classificacao}</span>
       </div>
-      <div style="margin-top: 8px;">
-        <div style="height: 10px; background: #E8E0D1; border-radius: 5px; overflow: hidden;">
-          <div style="height: 100%; background: linear-gradient(90deg, #C4785A 0%, #6B2D3A 100%); border-radius: 5px; width: ${f.percentil}%"></div>
+      <div style="margin-top: 10px;">
+        <div style="height: 12px; background: ${COLORS.vinhoDeep}; border-radius: 6px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
+          <div style="height: 100%; background: linear-gradient(90deg, ${COLORS.terracota} 0%, ${COLORS.terracotaLight} 50%, ${COLORS.terracota} 100%); border-radius: 6px; width: ${f.percentil}%; box-shadow: 0 0 10px ${COLORS.terracota}60;"></div>
         </div>
-        <div style="text-align: right; font-size: 13px; color: #6B2D3A; margin-top: 6px; font-weight: 600;">${f.percentil}º percentil</div>
-        ${isTreinadora ? `<div style="font-size: 11px; color: #888; margin-top: 2px; text-align: right;">Score: ${f.score.toFixed(2)}</div>` : ''}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+          <span style="font-size: 12px; color: ${COLORS.creamDark};">Percentil</span>
+          <span style="font-size: 16px; color: ${COLORS.terracota}; font-weight: 700;">${f.percentil}%</span>
+        </div>
+        ${isTreinadora ? `<div style="font-size: 11px; color: ${COLORS.creamDark}; margin-top: 4px; text-align: right; font-style: italic;">Score bruto: ${f.score.toFixed(2)}</div>` : ''}
       </div>
     </div>
   `).join('');
 
-  // HTML completo
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -303,48 +309,54 @@ function gerarTemplateHTML(dados: PDFData): string {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
-      .no-break {
-        page-break-inside: avoid;
-      }
+    }
+    @page {
+      margin: 20px;
     }
   </style>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #FFFFFF; color: #2D2420; line-height: 1.6; padding: 32px 24px; margin: 0;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(180deg, ${COLORS.vinhoDeep} 0%, ${COLORS.vinhoDark} 100%); color: ${COLORS.cream}; line-height: 1.6; padding: 32px 24px; margin: 0; min-height: 100vh;">
   
-  <!-- Header -->
-  <div style="text-align: center; padding-bottom: 20px; border-bottom: 3px solid #C4785A; margin-bottom: 24px;">
-    <div style="font-size: 32px; font-weight: 700; color: #6B2D3A; margin-bottom: 4px;">DECIFRA</div>
-    <div style="font-size: 14px; color: #C4785A; font-weight: 500;">Avaliação de Personalidade Big Five</div>
-    <div style="display: inline-block; background: #6B2D3A; color: white; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 12px;">${isTreinadora ? 'Relatório Completo' : 'Relatório do Cliente'}</div>
+  <!-- Header com Logo -->
+  <div style="text-align: center; padding-bottom: 24px; margin-bottom: 28px;">
+    ${logoSVG}
+    <div style="font-size: 32px; font-weight: 800; color: ${COLORS.cream}; margin-bottom: 6px; letter-spacing: 3px; text-transform: uppercase;">DECIFRA</div>
+    <div style="font-size: 14px; color: ${COLORS.terracota}; font-weight: 600; letter-spacing: 1px;">Avaliação de Personalidade Big Five</div>
+    <div style="display: inline-block; background: linear-gradient(135deg, ${COLORS.terracota} 0%, ${COLORS.vinho} 100%); color: ${COLORS.cream}; padding: 8px 20px; border-radius: 24px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+      ${isTreinadora ? 'Relatório Completo' : 'Relatório do Cliente'}
+    </div>
   </div>
   
   <!-- Info Section -->
-  <div style="background: #F5F0E8; border-radius: 12px; padding: 20px; margin-bottom: 28px; border: 1px solid #E8E0D1;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(196, 120, 90, 0.15);">
-      <span style="font-weight: 600; color: #6B2D3A; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Cliente</span>
-      <span style="font-weight: 500; color: #2D2420; font-size: 14px;">${cliente.nome}</span>
+  <div style="background: ${COLORS.vinhoDark}; border-radius: 16px; padding: 24px; margin-bottom: 32px; border: 1px solid ${COLORS.terracota}40; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid ${COLORS.terracota}30;">
+      <span style="font-weight: 700; color: ${COLORS.terracota}; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Cliente</span>
+      <span style="font-weight: 600; color: ${COLORS.cream}; font-size: 16px;">${cliente.nome}</span>
     </div>
     ${cliente.email ? `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(196, 120, 90, 0.15);">
-      <span style="font-weight: 600; color: #6B2D3A; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Email</span>
-      <span style="font-weight: 500; color: #2D2420; font-size: 14px;">${cliente.email}</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid ${COLORS.terracota}30;">
+      <span style="font-weight: 700; color: ${COLORS.terracota}; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Email</span>
+      <span style="font-weight: 500; color: ${COLORS.creamDark}; font-size: 14px;">${cliente.email}</span>
     </div>
     ` : ''}
     ${codigo ? `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(196, 120, 90, 0.15);">
-      <span style="font-weight: 600; color: #6B2D3A; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Código do Teste</span>
-      <span style="font-weight: 500; color: #2D2420; font-size: 14px;">${codigo}</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid ${COLORS.terracota}30;">
+      <span style="font-weight: 700; color: ${COLORS.terracota}; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Código do Teste</span>
+      <span style="font-weight: 600; color: ${COLORS.cream}; font-size: 14px; font-family: 'Courier New', monospace; letter-spacing: 2px;">${codigo}</span>
     </div>
     ` : ''}
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="font-weight: 600; color: #6B2D3A; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Data do Teste</span>
-      <span style="font-weight: 500; color: #2D2420; font-size: 14px;">${dataTeste}</span>
+      <span style="font-weight: 700; color: ${COLORS.terracota}; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Data do Teste</span>
+      <span style="font-weight: 500; color: ${COLORS.creamDark}; font-size: 14px;">${dataTeste}</span>
     </div>
   </div>
   
   <!-- Fatores -->
-  <div style="margin-bottom: 28px;">
-    <div style="font-size: 18px; font-weight: 700; color: #6B2D3A; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #C4785A;">5 Fatores Principais</div>
+  <div style="margin-bottom: 32px;">
+    <div style="font-size: 20px; font-weight: 700; color: ${COLORS.cream}; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid ${COLORS.terracota}; display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 24px;">🧬</span>
+      5 Fatores Principais
+    </div>
     ${fatoresHTML}
   </div>
   
@@ -352,21 +364,26 @@ function gerarTemplateHTML(dados: PDFData): string {
   ${facetasHTML}
   
   <!-- Protocolos -->
-  <div style="margin-bottom: 28px; margin-top: 28px;">
-    <div style="font-size: 18px; font-weight: 700; color: #6B2D3A; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #C4785A;">Protocolos Recomendados</div>
+  <div style="margin-bottom: 32px; margin-top: 32px;">
+    <div style="font-size: 20px; font-weight: 700; color: ${COLORS.cream}; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid ${COLORS.terracota}; display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 24px;">📋</span>
+      Protocolos Recomendados
+    </div>
     ${protocolosHTML}
   </div>
   
   <!-- Footer -->
-  <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #E8E0D1; text-align: center;">
-    <div style="font-size: 14px; font-weight: 600; color: #6B2D3A; margin-bottom: 4px;">Ártio · Decifra</div>
-    <div style="font-size: 11px; color: #999; margin-bottom: 2px;">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
-    <div style="font-size: 11px; color: #999;">© 2025 Todos os direitos reservados</div>
+  <div style="margin-top: 48px; padding-top: 24px; border-top: 2px solid ${COLORS.terracota}40; text-align: center;">
+    <div style="font-size: 16px; font-weight: 700; color: ${COLORS.cream}; margin-bottom: 6px; letter-spacing: 2px;">🌸 ÁRTIO · DECIFRA</div>
+    <div style="font-size: 12px; color: ${COLORS.creamDark}; margin-bottom: 4px; font-style: italic;">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+    <div style="font-size: 11px; color: ${COLORS.creamDark}99;">© 2025 Todos os direitos reservados</div>
     
     ${!isTreinadora ? `
-    <div style="margin-top: 12px; padding: 12px; background: #F5F0E8; border-radius: 8px; font-size: 11px; color: #666; font-style: italic;">
-      Este é um relatório resumido. Sua treinadora tem acesso a uma análise 
-      completa com todas as 30 facetas e protocolos detalhados.
+    <div style="margin-top: 16px; padding: 16px; background: ${COLORS.vinho}; border-radius: 12px; border: 1px solid ${COLORS.terracota}40;">
+      <div style="font-size: 12px; color: ${COLORS.creamDark}; font-style: italic; line-height: 1.5;">
+        ✨ Este é um relatório resumido. Sua treinadora tem acesso a uma análise 
+        completa com todas as 30 facetas e protocolos detalhados.
+      </div>
     </div>
     ` : ''}
   </div>
