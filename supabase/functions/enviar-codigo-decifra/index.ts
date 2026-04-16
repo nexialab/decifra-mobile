@@ -268,10 +268,17 @@ Deno.serve(async (req) => {
 
     // Enviar email via Brevo API
     const brevoApiKey = Deno.env.get("BREVO_API_KEY");
-    const fromEmail = Deno.env.get("BREVO_FROM_EMAIL") || "noreply@decifra.app";
+    let fromEmail = Deno.env.get("BREVO_FROM_EMAIL") || "acessos@artioescola.com.br";
     const fromName = Deno.env.get("BREVO_FROM_NAME") || "Decifra";
 
+    // Proteção: domínio decifra.app ainda não está verificado no Brevo
+    if (fromEmail.endsWith("@decifra.app")) {
+      console.warn("[enviar-codigo-decifra] Remetente não verificado detectado:", fromEmail, "→ usando acessos@artioescola.com.br");
+      fromEmail = "acessos@artioescola.com.br";
+    }
+
     console.log("[enviar-codigo-decifra] BREVO_API_KEY present:", !!brevoApiKey);
+    console.log("[enviar-codigo-decifra] fromEmail used:", fromEmail);
 
     if (!brevoApiKey) {
       return new Response(
@@ -286,7 +293,7 @@ Deno.serve(async (req) => {
       validoAte: typeof validoAte === "string" ? validoAte : undefined,
     });
 
-    console.log("[enviar-codigo-decifra] Sending email via Brevo to:", emailDestinatario);
+    console.log("[enviar-codigo-decifra] Sending email via Brevo from:", fromEmail, "to:", emailDestinatario);
 
     const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",

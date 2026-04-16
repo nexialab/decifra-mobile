@@ -18,22 +18,67 @@ ADD COLUMN IF NOT EXISTS teste_completado_em TIMESTAMPTZ,
 ADD COLUMN IF NOT EXISTS compra_id UUID,
 ADD COLUMN IF NOT EXISTS hotmart_transaction_id VARCHAR(100);
 
+-- Compatibilidade: alguns ambientes antigos não possuem treinadora_id em codigos.
+ALTER TABLE codigos
+ADD COLUMN IF NOT EXISTS treinadora_id UUID;
+
 -- Índices para performance na tabela codigos
-CREATE INDEX IF NOT EXISTS idx_codigos_treinadora_usado 
-  ON codigos(treinadora_id, usado) 
-  WHERE usado = false;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'codigos' AND column_name = 'treinadora_id'
+  )
+  AND EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'codigos' AND column_name = 'usado'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_codigos_treinadora_usado
+      ON codigos(treinadora_id, usado)
+      WHERE usado = false;
+  END IF;
+END $$;
 
-CREATE INDEX IF NOT EXISTS idx_codigos_compra 
-  ON codigos(compra_id) 
-  WHERE compra_id IS NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'codigos' AND column_name = 'compra_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_codigos_compra
+      ON codigos(compra_id)
+      WHERE compra_id IS NOT NULL;
+  END IF;
+END $$;
 
-CREATE INDEX IF NOT EXISTS idx_codigos_hotmart 
-  ON codigos(hotmart_transaction_id) 
-  WHERE hotmart_transaction_id IS NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'codigos' AND column_name = 'hotmart_transaction_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_codigos_hotmart
+      ON codigos(hotmart_transaction_id)
+      WHERE hotmart_transaction_id IS NOT NULL;
+  END IF;
+END $$;
 
-CREATE INDEX IF NOT EXISTS idx_codigos_usado_em 
-  ON codigos(usado_em) 
-  WHERE usado_em IS NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'codigos' AND column_name = 'usado_em'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_codigos_usado_em
+      ON codigos(usado_em)
+      WHERE usado_em IS NOT NULL;
+  END IF;
+END $$;
 
 -- ================================================
 -- 2. NOVA TABELA: COMPRAS
@@ -65,18 +110,117 @@ CREATE TABLE IF NOT EXISTS compras (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Compatibilidade: em alguns ambientes a tabela compras já existe com schema antigo.
+ALTER TABLE compras
+ADD COLUMN IF NOT EXISTS treinadora_id UUID,
+ADD COLUMN IF NOT EXISTS hotmart_transaction_id VARCHAR(100),
+ADD COLUMN IF NOT EXISTS hotmart_product_id BIGINT,
+ADD COLUMN IF NOT EXISTS hotmart_product_name VARCHAR(255),
+ADD COLUMN IF NOT EXISTS quantidade_codigos INTEGER,
+ADD COLUMN IF NOT EXISTS valor_total DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS status VARCHAR(20),
+ADD COLUMN IF NOT EXISTS evento_tipo VARCHAR(100),
+ADD COLUMN IF NOT EXISTS cliente_email VARCHAR(255),
+ADD COLUMN IF NOT EXISTS cliente_nome VARCHAR(255),
+ADD COLUMN IF NOT EXISTS email_enviado BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS email_enviado_em TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS comprador_email VARCHAR(255),
+ADD COLUMN IF NOT EXISTS comprador_nome VARCHAR(255),
+ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Compatibilidade adicional: alguns schemas antigos exigem evento_tipo NOT NULL.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'compras' AND column_name = 'evento_tipo'
+  ) THEN
+    UPDATE compras
+    SET evento_tipo = COALESCE(evento_tipo, 'hotmart_webhook')
+    WHERE evento_tipo IS NULL;
+
+    ALTER TABLE compras ALTER COLUMN evento_tipo SET DEFAULT 'hotmart_webhook';
+  END IF;
+END $$;
+
+-- Compatibilidade adicional: alguns schemas antigos exigem cliente_email NOT NULL.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'compras' AND column_name = 'cliente_email'
+  ) THEN
+    UPDATE compras
+    SET cliente_email = COALESCE(cliente_email, comprador_email, 'hotmart@placeholder.local')
+    WHERE cliente_email IS NULL;
+
+    ALTER TABLE compras ALTER COLUMN cliente_email SET DEFAULT 'hotmart@placeholder.local';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'compras' AND column_name = 'cliente_nome'
+  ) THEN
+    UPDATE compras
+    SET cliente_nome = COALESCE(cliente_nome, comprador_nome, 'Compradora Hotmart')
+    WHERE cliente_nome IS NULL;
+
+    ALTER TABLE compras ALTER COLUMN cliente_nome SET DEFAULT 'Compradora Hotmart';
+  END IF;
+END $$;
+
 -- Índices para a tabela compras
-CREATE INDEX IF NOT EXISTS idx_compras_treinadora 
-  ON compras(treinadora_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'compras' AND column_name = 'treinadora_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_compras_treinadora
+      ON compras(treinadora_id);
+  END IF;
+END $$;
 
-CREATE INDEX IF NOT EXISTS idx_compras_hotmart 
-  ON compras(hotmart_transaction_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'compras' AND column_name = 'hotmart_transaction_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_compras_hotmart
+      ON compras(hotmart_transaction_id);
+  END IF;
+END $$;
 
-CREATE INDEX IF NOT EXISTS idx_compras_status 
-  ON compras(status);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'compras' AND column_name = 'status'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_compras_status
+      ON compras(status);
+  END IF;
+END $$;
 
-CREATE INDEX IF NOT EXISTS idx_compras_created_at 
-  ON compras(created_at);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'compras' AND column_name = 'created_at'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_compras_created_at
+      ON compras(created_at);
+  END IF;
+END $$;
 
 -- Trigger para updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -132,32 +276,47 @@ ALTER TABLE compras ENABLE ROW LEVEL SECURITY;
 ALTER TABLE produtos_hotmart ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para COMPRAS
-CREATE POLICY IF NOT EXISTS "Treinadoras podem ver suas compras"
-  ON compras FOR SELECT
-  USING (
-    treinadora_id IN (
-      SELECT id FROM treinadoras WHERE auth_user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'compras' AND column_name = 'treinadora_id'
+  ) THEN
+    DROP POLICY IF EXISTS "Treinadoras podem ver suas compras" ON compras;
+    CREATE POLICY "Treinadoras podem ver suas compras"
+      ON compras FOR SELECT
+      USING (
+        treinadora_id IN (
+          SELECT id FROM treinadoras WHERE auth_user_id = auth.uid()
+        )
+      );
+  END IF;
 
-CREATE POLICY IF NOT EXISTS "Webhook Hotmart pode criar compras"
-  ON compras FOR INSERT
-  WITH CHECK (true);
+  DROP POLICY IF EXISTS "Webhook Hotmart pode criar compras" ON compras;
+  CREATE POLICY "Webhook Hotmart pode criar compras"
+    ON compras FOR INSERT
+    WITH CHECK (true);
 
-CREATE POLICY IF NOT EXISTS "Sistema pode atualizar compras"
-  ON compras FOR UPDATE
-  USING (true);
+  DROP POLICY IF EXISTS "Sistema pode atualizar compras" ON compras;
+  CREATE POLICY "Sistema pode atualizar compras"
+    ON compras FOR UPDATE
+    USING (true);
+END $$;
 
 -- Políticas para PRODUTOS_HOTMART (apenas leitura pública para treinadoras)
-CREATE POLICY IF NOT EXISTS "Produtos hotmart sao publicos para leitura"
+DROP POLICY IF EXISTS "Produtos hotmart sao publicos para leitura" ON produtos_hotmart;
+CREATE POLICY "Produtos hotmart sao publicos para leitura"
   ON produtos_hotmart FOR SELECT
   USING (ativo = true);
 
-CREATE POLICY IF NOT EXISTS "Apenas admin pode inserir produtos"
+DROP POLICY IF EXISTS "Apenas admin pode inserir produtos" ON produtos_hotmart;
+CREATE POLICY "Apenas admin pode inserir produtos"
   ON produtos_hotmart FOR INSERT
   WITH CHECK (false); -- Será ajustado quando houver sistema de admin
 
-CREATE POLICY IF NOT EXISTS "Apenas admin pode atualizar produtos"
+DROP POLICY IF EXISTS "Apenas admin pode atualizar produtos" ON produtos_hotmart;
+CREATE POLICY "Apenas admin pode atualizar produtos"
   ON produtos_hotmart FOR UPDATE
   USING (false); -- Será ajustado quando houver sistema de admin
 

@@ -295,8 +295,13 @@ Deno.serve(async (req) => {
 
     // Enviar email via Brevo
     const brevoApiKey = Deno.env.get("BREVO_API_KEY");
-    const fromEmail = Deno.env.get("BREVO_FROM_EMAIL") || "noreply@decifra.app";
+    let fromEmail = Deno.env.get("BREVO_FROM_EMAIL") || "acessos@artioescola.com.br";
     const fromName = Deno.env.get("BREVO_FROM_NAME") || "Decifra";
+
+    if (fromEmail.endsWith("@decifra.app")) {
+      console.warn("[notificar-teste-finalizado] Remetente não verificado detectado:", fromEmail, "→ usando acessos@artioescola.com.br");
+      fromEmail = "acessos@artioescola.com.br";
+    }
 
     if (!brevoApiKey) {
       return new Response(
@@ -305,7 +310,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log("[notificar-teste-finalizado] Enviando email para treinadora:", treinadoraRow.email);
+    console.log("[notificar-teste-finalizado] Enviando email de", fromEmail, "para treinadora:", treinadoraRow.email);
 
     const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
